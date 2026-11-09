@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0a1020">
+  <meta name="description" content="Bluetooth機器の探索・解析・通信・操作をまとめたWebツール">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <title>BlueLink Hub | Bluetooth Control Center</title>
+  <style>
+    :root{color-scheme:dark;--bg:#080d19;--panel:#101a2c;--panel2:#142138;--line:#263752;--text:#eaf2ff;--muted:#91a4c1;--cyan:#52d7f5;--blue:#668cff;--green:#58dfaa;--orange:#ffbd69;--red:#ff7186;--radius:18px}
+    *{box-sizing:border-box}
+    body{margin:0;background:radial-gradient(circle at 75% -20%,#1b3460 0,transparent 36%),var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+    button,input,textarea,select{font:inherit}
+    button{cursor:pointer}
+    .app{max-width:1440px;margin:auto;padding:20px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}
+    .brand{display:flex;align-items:center;gap:13px}.logo{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(140deg,#55dbf6,#637bff);font-size:25px;box-shadow:0 8px 30px #4b8dff35}
+    h1{font-size:22px;line-height:1.15;margin:0;letter-spacing:.04em}.subtitle{color:var(--muted);font-size:12px;margin-top:4px}
+    .statusbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.pill{border:1px solid var(--line);border-radius:99px;padding:6px 11px;color:var(--muted);font-size:12px;background:#101a2c}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);margin-right:7px}.dot.ok{background:var(--green)}.dot.bad{background:var(--red)}
+    .layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:18px}
+    aside,.panel,.metric{background:linear-gradient(145deg,#111d31,#0d1728);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 12px 35px #0002}
+    aside{padding:12px;height:max-content;position:sticky;top:12px}
+    .nav-title{padding:9px 11px;color:#7187a8;font-size:10px;letter-spacing:.16em;font-weight:800}
+    .nav{display:flex;flex-direction:column;gap:5px}.nav button{border:0;text-align:left;color:#9fb0ca;background:transparent;padding:11px 12px;border-radius:12px}.nav button:hover,.nav button.active{background:#1a2b47;color:#fff}.nav button.active{box-shadow:inset 3px 0 var(--cyan)}
+    main{min-width:0}.view{display:none}.view.active{display:block}
+    .view-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:3px 0 17px}.view-head h2{font-size:21px;margin:0}.view-head p{color:var(--muted);margin:5px 0 0;font-size:13px}
+    .grid{display:grid;gap:14px}.metrics{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:15px}.metric{padding:17px}.metric label{display:block;color:var(--muted);font-size:12px}.metric strong{display:block;font-size:27px;margin-top:5px}.metric small{color:#7187a8}
+    .two{grid-template-columns:1.15fr .85fr}.panel{padding:18px;margin-bottom:14px;min-width:0}.panel h3{font-size:15px;margin:0 0 12px}.panel .desc{font-size:12px;color:var(--muted);margin:-5px 0 14px}
+    .actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center}.btn{border:1px solid #385171;color:#eaf5ff;background:#1a2b45;border-radius:11px;padding:9px 13px;font-weight:650}.btn:hover{filter:brightness(1.15)}.btn.primary{color:#07111d;background:linear-gradient(120deg,var(--cyan),#7da3ff);border:0}.btn.good{background:#133b39;border-color:#246e65;color:#a4ffe2}.btn.warn{background:#3a2a1a;border-color:#73502a;color:#ffdda7}.btn.danger{background:#3b202b;border-color:#713444;color:#ffc1cb}.btn:disabled{opacity:.45;cursor:not-allowed}
+    .field{display:flex;flex-direction:column;gap:6px;margin:10px 0}.field label{font-size:12px;color:#a9bad2}.input,textarea,select{width:100%;background:#091322;border:1px solid #2b3f5c;border-radius:10px;color:var(--text);padding:10px 11px;outline:none}.input:focus,textarea:focus,select:focus{border-color:var(--cyan)}textarea{min-height:90px;resize:vertical;font-family:ui-monospace,monospace;font-size:12px}.hint{font-size:11px;color:#8196b5}
+    .device{border:1px solid var(--line);border-radius:13px;padding:13px;margin:9px 0;background:#0c1728}.device-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.device-name{font-weight:750;overflow-wrap:anywhere}.uuid{font:11px ui-monospace,monospace;color:#80a2ca;overflow-wrap:anywhere}.tag{display:inline-flex;border:1px solid #344c6a;color:#a9c6e8;border-radius:99px;padding:2px 7px;font-size:10px;margin:4px 4px 0 0}
+    .empty{padding:23px;text-align:center;border:1px dashed #314763;border-radius:13px;color:#8fa3c0;font-size:13px}.empty b{display:block;color:#d7e6fb;font-size:15px;margin-bottom:6px}
+    .char-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.char{padding:12px;border:1px solid #2a3d59;background:#0b1627;border-radius:12px;min-width:0}.char strong{display:block;font-size:13px;overflow-wrap:anywhere}.char .actions{margin-top:9px}.char .btn{font-size:11px;padding:6px 9px}
+    .log-list{display:flex;flex-direction:column;gap:7px;max-height:420px;overflow:auto}.log{display:grid;grid-template-columns:72px 75px 1fr;gap:9px;padding:9px 10px;background:#0b1627;border:1px solid #21334c;border-radius:9px;font-size:12px}.log time{color:#7890b2}.log .kind{color:var(--cyan)}.log .message{overflow-wrap:anywhere}
+    canvas{width:100%;height:230px;background:#081322;border:1px solid #243752;border-radius:12px}
+    .chat{height:220px;overflow:auto;background:#081322;border:1px solid #243752;border-radius:12px;padding:10px;margin:10px 0}.bubble{max-width:88%;padding:8px 10px;border-radius:12px;background:#1a2d49;margin:7px 0;font-size:12px;overflow-wrap:anywhere}.bubble.me{margin-left:auto;background:#16404a}.bubble small{display:block;color:#93a9c7;font-size:10px}
+    .notice{border-left:3px solid var(--orange);background:#2b2419;color:#e9d6b4;padding:10px 12px;border-radius:0 9px 9px 0;font-size:12px;margin:12px 0}.notice.info{border-color:var(--cyan);background:#122538;color:#b9eafa}.notice.good{border-color:var(--green);background:#122a2b;color:#b9f4df}
+    .pending{border:1px solid #76572d;background:#2b2116;padding:12px;border-radius:12px;margin:8px 0}.footer{color:#6f84a3;text-align:center;font-size:11px;padding:20px 0}.hide{display:none!important}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}aside{position:static}.nav{display:grid;grid-template-columns:repeat(3,1fr)}.nav button{font-size:12px;text-align:center;padding:9px 5px}.nav-title{display:none}.metrics{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:600px){.app{padding:12px}.statusbar{display:none}.two{grid-template-columns:1fr}.char-grid{grid-template-columns:1fr}.view-head{align-items:flex-start;flex-direction:column}.metric{padding:13px}.metric strong{font-size:23px}.log{grid-template-columns:58px 55px 1fr;gap:5px;font-size:11px}h1{font-size:19px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><div class="logo">ᛒ</div><div><h1>BlueLink Hub</h1><div class="subtitle">BLUETOOTH DISCOVERY · ANALYSIS · CONTROL</div></div></div>
+    <div class="statusbar"><span class="pill"><span class="dot" id="bleDot"></span><span id="bleState">BLE 未接続</span></span><span class="pill"><span class="dot" id="rtcDot"></span><span id="rtcState">遠隔未接続</span></span><span class="pill" id="browserState">ブラウザ確認中</span></div>
+  </header>
+  <div class="layout">
+    <aside>
+      <div class="nav-title">CONTROL CENTER</div>
+      <nav class="nav">
+        <button class="active" data-view="home">◈　ダッシュボード</button>
+        <button data-view="explore">⌕　機器探索</button>
+        <button data-view="analysis">▥　データ解析</button>
+        <button data-view="remote">⇄　遠隔通信</button>
+        <button data-view="logs">▤　履歴・保存</button>
+        <button data-view="settings">⚙　設定・対応情報</button>
+      </nav>
+    </aside>
+    <main>
+      <section class="view active" id="view-home">
+        <div class="view-head"><div><h2>ダッシュボード</h2><p>周辺機器・データ・通信をまとめて管理します。</p></div><button class="btn primary" id="quickExplore">＋ 機器を探索</button></div>
+        <div class="grid metrics">
+          <div class="metric"><label>BLE接続状態</label><strong id="metricBle">未接続</strong><small>このブラウザの接続</small></div>
+          <div class="metric"><label>発見サービス</label><strong id="metricServices">0</strong><small>接続後に列挙された数</small></div>
+          <div class="metric"><label>受信データ数</label><strong id="metricData">0</strong><small>読み取り・通知の合計</small></div>
+          <div class="metric"><label>記録件数</label><strong id="metricLogs">0</strong><small>この端末のローカル保存</small></div>
+        </div>
+        <div class="grid two">
+          <div class="panel"><h3>接続中のデバイス</h3><div id="homeDevice" class="empty"><b>まだ接続されていません</b>機器探索からBLEデバイスを選択してください。</div></div>
+          <div class="panel"><h3>クイックアクション</h3><div class="actions"><button class="btn" data-jump="explore">🔍 BLE探索</button><button class="btn" data-jump="analysis">📊 解析を見る</button><button class="btn" data-jump="remote">⇄ 遠隔通信</button><button class="btn" data-jump="logs">▤ 履歴を確認</button></div><div class="notice info">Bluetoothは対応機器・対応ブラウザでのみ利用できます。Webアプリが勝手に全機器をスキャンすることはできず、接続先はユーザーが選択します。</div></div>
+        </div>
+        <div class="panel"><h3>最近のイベント</h3><div id="recentLogs" class="log-list"><div class="empty">まだイベントはありません。</div></div></div>
+      </section>
+
+      <section class="view" id="view-explore">
+        <div class="view-head"><div><h2>機器探索・GATT調査</h2><p>BLE機器をユーザーが選び、公開されたサービスと特性を調べます。</p></div></div>
+        <div class="panel">
+          <h3>① 接続するBLE機器を選択</h3>
+          <div class="field"><label>追加でアクセスしたいサービスUUID（任意・カンマまたは改行区切り）</label><input class="input" id="customUUID" placeholder="例: 12345678-1234-5678-1234-56789abcdef0"></div>
+          <div class="actions"><button class="btn primary" id="scanBtn">🔍 Bluetooth機器を選ぶ</button><button class="btn danger" id="disconnectBtn" disabled>切断</button></div>
+          <p class="hint">「探索」はOSのBluetooth選択画面を開きます。一般的なBLE広告を無制限に一覧取得するスキャンではありません。MACアドレスや正確な距離は取得できません。</p>
+          <div id="bleMessage" class="notice info">対応ブラウザではHTTPS上で利用できます。iPhone/iPadのSafariはWeb Bluetoothに対応していないため、直接BLE接続できません。</div>
+        </div>
+        <div class="panel"><h3>② 接続デバイス</h3><div id="deviceDetail" class="empty"><b>デバイス未選択</b>上のボタンから接続先を選んでください。</div></div>
+        <div class="panel"><h3>③ GATTサービス・特性</h3><p class="desc">読み取り・通知・書き込みは、機器側が対応している特性だけ実行できます。</p><div id="serviceList" class="empty">接続するとサービス一覧が表示されます。</div></div>
+      </section>
+
+      <section class="view" id="view-analysis">
+        <div class="view-head"><div><h2>データ解析</h2><p>BLE特性から読み取った値・通知データを表示します。</p></div><button class="btn" id="clearGraph">グラフをクリア</button></div>
+        <div class="panel"><h3>受信データの推移</h3><p class="desc">汎用表示のため、グラフは受信データ先頭1バイト（0〜255）を描画します。物理量や温度として校正された値ではありません。</p><canvas id="chart" width="900" height="230"></canvas><div class="hint" id="chartHint">まだデータがありません。</div></div>
+        <div class="grid two">
+          <div class="panel"><h3>直近の受信値</h3><div id="latestData" class="empty">データ待機中</div></div>
+          <div class="panel"><h3>手動データ送信</h3><div class="field"><label>書き込み先特性</label><select id="writeTarget"><option value="">書き込み可能な特性なし</option></select></div><div class="field"><label>データ形式</label><select id="writeFormat"><option value="text">UTF-8テキスト</option><option value="hex">16進数（例: 48 65 6C 6C 6F）</option></select></div><div class="field"><label>送信データ</label><textarea id="writeData" placeholder="送信するデータを入力"></textarea></div><button class="btn primary" id="writeBtn" disabled>データを書き込む</button><div class="hint">書き込みは機器の仕様を確認してから実行してください。</div></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-remote">
+        <div class="view-head"><div><h2>遠隔通信・リモート連携</h2><p>ブラウザ同士をWebRTCで直接接続し、テキストや操作リクエストを送ります。</p></div></div>
+        <div class="notice">この機能はサーバーを使わない手動ペアリング方式です。接続コード（SDP）を別の安全な方法で相手に渡してください。STUNで接続経路を探しますが、ネットワークによっては接続できません。TURN中継サーバーは含まれません。</div>
+        <div class="grid two">
+          <div class="panel"><h3>① 接続を開始する側</h3><button class="btn primary" id="offerBtn">接続コードを作成</button><div class="field"><label>作成したOfferコードを相手に渡す</label><textarea id="offerBox" placeholder="接続コードがここに表示されます"></textarea><button class="btn" id="copyOffer">Offerをコピー</button></div><div class="field"><label>相手から受け取ったAnswerコード</label><textarea id="answerBox" placeholder="相手が作成したAnswerを貼り付け"></textarea><button class="btn good" id="applyAnswer">Answerを適用して接続</button></div></div>
+          <div class="panel"><h3>② 接続を受ける側</h3><div class="field"><label>相手から受け取ったOfferコード</label><textarea id="incomingOffer" placeholder="Offerコードを貼り付け"></textarea><button class="btn primary" id="acceptOffer">Offerを受信してAnswer作成</button></div><div class="field"><label>作成したAnswerコードを相手に渡す</label><textarea id="answerOut" placeholder="Answerコードがここに表示されます"></textarea><button class="btn" id="copyAnswer">Answerをコピー</button></div></div>
+        </div>
+        <div class="panel"><h3>③ テキスト通信</h3><div class="chat" id="chatBox"><div class="hint">接続が成立すると、ここでメッセージを送受信できます。</div></div><div class="actions"><input class="input" id="chatInput" placeholder="メッセージを入力" style="flex:1;min-width:170px"><button class="btn primary" id="sendChat" disabled>送信</button><button class="btn danger" id="closePeer">切断</button></div></div>
+        <div class="panel"><h3>④ BLE操作リクエスト（受信側で承認）</h3><p class="desc">遠隔側からBLE書き込みリクエストを送れます。相手側では自動実行せず、内容を確認してから承認します。</p><div class="grid two"><div><div class="field"><label>対象サービスUUID</label><input class="input" id="remoteServiceUUID" placeholder="対象サービスUUID"></div><div class="field"><label>対象特性UUID</label><input class="input" id="remoteCharUUID" placeholder="書き込み先特性UUID"></div></div><div><div class="field"><label>データ形式</label><select id="remoteFormat"><option value="text">UTF-8テキスト</option><option value="hex">16進数</option></select></div><div class="field"><label>送信内容</label><textarea id="remotePayload" placeholder="相手のBLE機器へ送るデータ"></textarea></div></div></div><button class="btn warn" id="sendBleRequest" disabled>操作リクエストを送信</button><h3 style="margin-top:18px">受信した操作リクエスト</h3><div id="pendingRequests" class="empty">未処理のリクエストはありません。</div></div>
+      </section>
+
+      <section class="view" id="view-logs">
+        <div class="view-head"><div><h2>履歴・データ保存</h2><p>イベントはこのブラウザのlocalStorageに保存されます。</p></div></div>
+        <div class="panel"><div class="actions"><button class="btn" id="exportJSON">JSONを書き出す</button><button class="btn" id="exportCSV">CSVを書き出す</button><button class="btn danger" id="clearLogs">履歴を削除</button></div><p class="hint">履歴はクラウド同期されません。ブラウザのデータ消去やプライベートブラウズ終了で失われる場合があります。</p></div>
+        <div class="panel"><h3>イベントログ</h3><div id="allLogs" class="log-list"></div></div>
+      </section>
+
+      <section class="view" id="view-settings">
+        <div class="view-head"><div><h2>設定・対応情報</h2><p>動作条件と機能上の制約を確認できます。</p></div></div>
+        <div class="panel"><h3>ブラウザ環境</h3><div id="compatibility"></div></div>
+        <div class="panel"><h3>できること・できないこと</h3><ul class="hint" style="line-height:2.1;padding-left:20px"><li>Web BluetoothはBLE GATT対応機器への接続・読み取り・通知・書き込みに利用します。</li><li>すべての周辺機器を自動発見する一般的なBluetoothスキャナーではありません。接続先はユーザーが選択します。</li><li>Bluetooth MACアドレス、正確な距離、広告RSSIの連続スキャンはブラウザから取得できません。</li><li>サービスUUIDを許可リストに含める必要があります。独自機器はサービスUUIDの事前指定が必要な場合があります。</li><li>iPhone/iPadのSafariではWeb Bluetoothが使えません。アプリの画面やローカル履歴は利用できますが、BLE直接接続はできません。</li><li>遠隔通信はWebRTCの手動SDP交換です。公開ルーム・自動相手検索・TURN中継・常時バックグラウンド接続はありません。</li><li>遠隔側からのBLE操作はリクエストとして受け取り、機器の近くにいる側が内容を確認して承認した後に実行します。</li></ul></div>
+        <div class="panel"><h3>プライバシー</h3><p class="hint">BLE通信とWebRTC通信はこのページのJavaScriptから実行します。GASや独自バックエンドは使用しません。履歴は端末内に保存されます。接続コードやメッセージを第三者に共有しないでください。WebRTCは通信を暗号化しますが、手動ペアリング相手の本人性を自動確認する仕組みはありません。</p></div>
+      </section>
+    </main>
+  </div>
+  <div class="footer">BlueLink Hub · Static Web App · GitHub Pages ready · No GAS / No database server</div>
+</div>
+<script>
+(function(){
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const OPTIONAL_SERVICES = ["battery_service","device_information","heart_rate","health_thermometer","environmental_sensing","generic_access","generic_attribute","tx_power","current_time","cycling_speed_and_cadence","running_speed_and_cadence","humidity","pressure","weight_scale","body_composition","pulse_oximeter","glucose","blood_pressure","automation_io","immediate_alert","link_loss","alert_notification"];
+  let bleDevice=null, gattServer=null, services=[], charMap=new Map(), activeWriteChar=null;
+  let logs=[], dataCount=0, chartValues=[], pendingId=0, peer=null, dataChannel=null;
+  try{logs=JSON.parse(localStorage.getItem("bluelink.logs")||"[]");if(!Array.isArray(logs))logs=[];}catch(e){logs=[];}
+  const pad=n=>String(n).padStart(2,"0");
+  const clock=()=>{const d=new Date();return pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds());};
+  const esc=s=>String(s==null?"":s);
+  function addLog(kind,message,details){
+    const item={time:new Date().toISOString(),kind:kind,message:String(message),details:details||""};
+    logs.unshift(item);logs=logs.slice(0,250);
+    try{localStorage.setItem("bluelink.logs",JSON.stringify(logs));}catch(e){}
+    renderLogs();updateMetrics();
+  }
+  function renderLogList(target,items){
+    target.textContent="";
+    if(!items.length){const empty=document.createElement("div");empty.className="empty";empty.textContent="まだイベントはありません。";target.appendChild(empty);return;}
+    items.forEach(item=>{
+      const row=document.createElement("div");row.className="log";
+      const time=document.createElement("time");time.textContent=clockFromISO(item.time);
+      const kind=document.createElement("span");kind.className="kind";kind.textContent=item.kind;
+      const msg=document.createElement("span");msg.className="message";msg.textContent=item.message+(item.details?" · "+item.details:"");
+      row.append(time,kind,msg);target.appendChild(row);
+    });
+  }
+  function clockFromISO(value){const d=new Date(value);return pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds());}
+  function renderLogs(){renderLogList($("allLogs"),logs);renderLogList($("recentLogs"),logs.slice(0,5));}
+  function updateMetrics(){
+    $("metricBle").textContent=bleDevice&&bleDevice.gatt&&bleDevice.gatt.connected?"接続中":"未接続";
+    $("metricServices").textContent=String(services.length);
+    $("metricData").textContent=String(dataCount);
+    $("metricLogs").textContent=String(logs.length);
+  }
+  function setBLEState(connected){
+    $("bleState").textContent=connected?"BLE 接続中":"BLE 未接続";
+    $("bleDot").className="dot "+(connected?"ok":"");
+    $("disconnectBtn").disabled=!connected;
+    if(!connected){$("metricBle").textContent="未接続";}
+    else{$("metricBle").textContent="接続中";}
+  }
+  function showView(name){
+    document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+name));
+    document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===name));
+    if(name==="analysis")drawChart();
+  }
+  document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
+  document.querySelectorAll("[data-jump]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.jump)));
+  $("quickExplore").addEventListener("click",()=>showView("explore"));
+
+  function setMessage(message,type){
+    const el=$("bleMessage");el.textContent=message;el.className="notice "+(type||"info");
+  }
+  function parseUUIDList(raw){
+    return raw.split(/[,\n;]/).map(s=>s.trim()).filter(Boolean).map(s=>{
+      if(/^[0-9a-fA-F]{4}$/.test(s))return "0000"+s.toLowerCase()+"-0000-1000-8000-00805f9b34fb";
+      return s.toLowerCase();
+    });
+  }
+  function uuidValid(u){return /^[0-9a-f]{4}$/.test(u)||/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(u);}
+  async function connectBluetooth(){
+    if(!window.isSecureContext){setMessage("Bluetooth接続にはHTTPSなどのセキュアコンテキストが必要です。GitHub PagesのHTTPSで開いてください。","notice");return;}
+    if(!navigator.bluetooth||!navigator.bluetooth.requestDevice){setMessage("このブラウザはWeb Bluetoothに対応していません。Android版Chromeまたは対応するPC版Chrome/Edgeでお試しください。iPad Safariでは直接接続できません。","");addLog("BLE","Web Bluetooth非対応");return;}
+    try{
+      const optional=Array.from(new Set(OPTIONAL_SERVICES.concat(parseUUIDList($("customUUID").value))));
+      setMessage("OSのBluetooth機器選択画面を開いています。接続したい機器を選択してください。","info");
+      const device=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:optional});
+      if(bleDevice&&bleDevice.gatt&&bleDevice.gatt.connected)bleDevice.gatt.disconnect();
+      bleDevice=device;bleDevice.addEventListener("gattserverdisconnected",onDisconnected);
+      $("deviceDetail").textContent="";
+      const name=document.createElement("b");name.textContent=device.name||"名前なしデバイス";
+      const line=document.createElement("div");line.className="uuid";line.textContent="ID: "+device.id;
+      $("deviceDetail").append(name,line);
+      addLog("BLE","デバイスを選択",device.name||device.id);
+      setMessage("接続しています: "+(device.name||"名前なしデバイス"),"info");
+      gattServer=await device.gatt.connect();
+      setBLEState(true);
+      addLog("BLE","GATT接続成功",device.name||device.id);
+      await loadServices();
+      setMessage("接続しました。表示されたサービスと特性から操作を選択してください。","good");
+      updateHomeDevice();updateMetrics();
+    }catch(error){
+      const msg=error&&error.message?error.message:String(error);
+      if(error&&error.name==="NotFoundError"){setMessage("機器選択がキャンセルされました。","info");}
+      else{setMessage("接続できませんでした: "+msg,"");addLog("ERROR","BLE接続失敗",msg);}
+    }
+  }
+  function onDisconnected(){
+    setBLEState(false);gattServer=null;services=[];charMap.clear();activeWriteChar=null;
+    $("serviceList").textContent="切断されました。再接続するには機器を選択してください。";
+    $("writeTarget").innerHTML='<option value="">書き込み可能な特性なし</option>';$("writeBtn").disabled=true;
+    $("deviceDetail").textContent="デバイス未接続";
+    updateHomeDevice();updateMetrics();addLog("BLE","デバイスが切断されました");
+  }
+  async function loadServices(){
+    $("serviceList").textContent="サービスを調査しています…";
+    charMap.clear();activeWriteChar=null;
+    $("writeTarget").innerHTML='<option value="">書き込み可能な特性なし</option>';
+    const serviceList=await gattServer.getPrimaryServices();services=serviceList;
+    $("serviceList").textContent="";
+    if(!serviceList.length){$("serviceList").textContent="許可されたGATTサービスが見つかりません。独自サービスUUIDを入力して再接続してください。";return;}
+    for(const service of serviceList){
+      const section=document.createElement("div");section.className="device";
+      const title=document.createElement("div");title.className="device-name";title.textContent=serviceName(service.uuid);
+      const id=document.createElement("div");id.className="uuid";id.textContent=service.uuid;
+      section.append(title,id);
+      const chars=document.createElement("div");chars.className="char-grid";chars.style.marginTop="10px";
+      try{
+        const characteristics=await service.getCharacteristics();
+        for(const ch of characteristics){
+          const key=service.uuid+"|"+ch.uuid;charMap.set(key,ch);
+          const card=document.createElement("div");card.className="char";
+          const ctitle=document.createElement("strong");ctitle.textContent=characteristicName(ch.uuid);
+          const cuid=document.createElement("div");cuid.className="uuid";cuid.textContent=ch.uuid;
+          const prop=document.createElement("div");
+          ["read","write","writeWithoutResponse","notify","indicate"].forEach(p=>{if(ch.properties[p]){const tag=document.createElement("span");tag.className="tag";tag.textContent=p;prop.append(tag);}});
+          const actions=document.createElement("div");actions.className="actions";
+          if(ch.properties.read)actions.append(makeButton("読取","btn",()=>readCharacteristic(ch)));
+          if(ch.properties.notify||ch.properties.indicate)actions.append(makeButton("通知開始","btn",()=>notifyCharacteristic(ch)));
+          if(ch.properties.write||ch.properties.writeWithoutResponse)actions.append(makeButton("送信先に選択","btn",()=>selectWriteTarget(service.uuid,ch)));
+          card.append(ctitle,cuid,prop,actions);chars.append(card);
+          if(ch.properties.write||ch.properties.writeWithoutResponse)addWriteOption(service.uuid,ch);
+        }
+      }catch(error){const err=document.createElement("p");err.className="hint";err.textContent="特性を取得できません: "+error.message;section.append(err);}
+      if(!chars.children.length){const none=document.createElement("p");none.className="hint";none.textContent="アクセス可能な特性はありません。";section.append(none);}else{section.append(chars);}
+      $("serviceList").append(section);
+    }
+    addLog("BLE","GATTサービス調査完了",serviceList.length+" services");
+    updateMetrics();
+  }
+  function serviceName(uuid){
+    const names={"battery_service":"バッテリーサービス","device_information":"デバイス情報","heart_rate":"心拍数","health_thermometer":"温度計","environmental_sensing":"環境センサー","generic_access":"Generic Access","generic_attribute":"Generic Attribute","tx_power":"送信電力","current_time":"現在時刻","humidity":"湿度","pressure":"気圧"};
+    return names[uuid]||"GATT Service";
+  }
+  function characteristicName(uuid){
+    const names={"battery_level":"バッテリー残量","manufacturer_name_string":"メーカー名","model_number_string":"モデル番号","serial_number_string":"シリアル番号","firmware_revision_string":"ファームウェア","hardware_revision_string":"ハードウェア","software_revision_string":"ソフトウェア","heart_rate_measurement":"心拍数測定","temperature_measurement":"温度測定","humidity":"湿度","pressure":"気圧","measurement_interval":"測定間隔"};
+    return names[uuid]||"Characteristic";
+  }
+  function makeButton(label,cls,handler){const b=document.createElement("button");b.type="button";b.className=cls;b.textContent=label;b.addEventListener("click",handler);return b;}
+  function addWriteOption(serviceUUID,ch){
+    const value=serviceUUID+"|"+ch.uuid;const option=document.createElement("option");option.value=value;option.textContent=characteristicName(ch.uuid)+" · "+ch.uuid.slice(0,13);$("writeTarget").append(option);
+  }
+  function selectWriteTarget(serviceUUID,ch){
+    $("writeTarget").value=serviceUUID+"|"+ch.uuid;activeWriteChar=ch;$("writeBtn").disabled=false;showView("analysis");addLog("BLE","書き込み先を選択",ch.uuid);
+  }
+  function bytesFromView(view){
+    const out=[];for(let i=0;i<view.byteLength;i++)out.push(view.getUint8(i));return out;
+  }
+  function decodeBytes(bytes){
+    let text="";try{text=new TextDecoder("utf-8",{fatal:false}).decode(new Uint8Array(bytes));}catch(e){}
+    return {text:text,hex:bytes.map(b=>b.toString(16).padStart(2,"0")).join(" ").toUpperCase()};
+  }
+  function recordData(source,view){
+    const bytes=bytesFromView(view);const decoded=decodeBytes(bytes);dataCount++;
+    chartValues.push(bytes.length?bytes[0]:0);if(chartValues.length>100)chartValues.shift();
+    $("latestData").textContent="";
+    const title=document.createElement("b");title.textContent=source;
+    const text=document.createElement("div");text.textContent="UTF-8: "+(decoded.text||"(空 / バイナリ)");
+    const hex=document.createElement("div");hex.className="uuid";hex.textContent="HEX: "+decoded.hex;
+    $("latestData").append(title,text,hex);
+    $("chartHint").textContent="受信データ "+dataCount+" 件 · 最新先頭バイト "+(bytes[0]==null?"-":bytes[0]);
+    drawChart();addLog("DATA",source,decoded.hex.slice(0,90));updateMetrics();
+  }
+  async function readCharacteristic(ch){
+    try{const view=await ch.readValue();recordData(ch.uuid+" 読み取り",view);}
+    catch(error){addLog("ERROR","読み取り失敗",error.message);}
+  }
+  async function notifyCharacteristic(ch){
+    try{
+      await ch.startNotifications();
+      ch.addEventListener("characteristicvaluechanged",()=>{if(ch.value)recordData(ch.uuid+" 通知",ch.value);});
+      addLog("BLE","通知を開始",ch.uuid);
+    }catch(error){addLog("ERROR","通知開始失敗",error.message);}
+  }
+  function bytesFromInput(raw,format){
+    if(format==="text")return Array.from(new TextEncoder().encode(raw));
+    const clean=raw.replace(/0x/gi,"").replace(/[\s,:;-]/g,"");
+    if(!clean||clean.length%2||!/^[0-9a-f]+$/i.test(clean))throw new Error("16進数は2桁ずつ入力してください。");
+    const bytes=[];for(let i=0;i<clean.length;i+=2)bytes.push(parseInt(clean.slice(i,i+2),16));return bytes;
+  }
+  async function writeBytes(ch,bytes){
+    const data=new Uint8Array(bytes);
+    if(ch.properties.write&&typeof ch.writeValueWithResponse==="function")await ch.writeValueWithResponse(data);
+    else if(ch.properties.writeWithoutResponse&&typeof ch.writeValueWithoutResponse==="function")await ch.writeValueWithoutResponse(data);
+    else throw new Error("この特性は書き込みに対応していません。");
+  }
+  $("scanBtn").addEventListener("click",connectBluetooth);
+  $("disconnectBtn").addEventListener("click",()=>{if(bleDevice&&bleDevice.gatt&&bleDevice.gatt.connected)bleDevice.gatt.disconnect();});
+  $("writeTarget").addEventListener("change",()=>{activeWriteChar=charMap.get($("writeTarget").value)||null;$("writeBtn").disabled=!activeWriteChar;});
+  $("writeBtn").addEventListener("click",async()=>{
+    try{if(!activeWriteChar)throw new Error("書き込み先を選択してください。");const bytes=bytesFromInput($("writeData").value,$("writeFormat").value);await writeBytes(activeWriteChar,bytes);addLog("BLE","データ書き込み成功",bytes.length+" bytes");}
+    catch(error){addLog("ERROR","書き込み失敗",error.message);alert(error.message);}
+  });
+  function updateHomeDevice(){
+    const box=$("homeDevice");box.textContent="";
+    if(!bleDevice||!bleDevice.gatt.connected){box.className="empty";const b=document.createElement("b");b.textContent="まだ接続されていません";box.append(b,document.createTextNode("機器探索からBLEデバイスを選択してください。"));return;}
+    box.className="device";const b=document.createElement("div");b.className="device-name";b.textContent=bleDevice.name||"名前なしデバイス";const id=document.createElement("div");id.className="uuid";id.textContent=bleDevice.id;const st=document.createElement("span");st.className="tag";st.textContent="GATT CONNECTED";box.append(b,id,st);
+  }
+  function drawChart(){
+    const canvas=$("chart");if(!canvas)return;const ctx=canvas.getContext("2d");const w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle="#243752";ctx.lineWidth=1;
+    for(let i=0;i<=4;i++){const y=16+(h-32)*i/4;ctx.beginPath();ctx.moveTo(36,y);ctx.lineTo(w-12,y);ctx.stroke();ctx.fillStyle="#8297b5";ctx.font="11px sans-serif";ctx.fillText(String(255-i*255/4),5,y+4);}
+    if(!chartValues.length)return;
+    ctx.strokeStyle="#52d7f5";ctx.lineWidth=2.5;ctx.beginPath();
+    chartValues.forEach((v,i)=>{const x=36+(w-52)*(chartValues.length===1?1:i/(chartValues.length-1));const y=h-16-(h-32)*(v/255);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();
+    chartValues.forEach((v,i)=>{const x=36+(w-52)*(chartValues.length===1?1:i/(chartValues.length-1));const y=h-16-(h-32)*(v/255);ctx.fillStyle="#9eefff";ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();});
+  }
+  $("clearGraph").addEventListener("click",()=>{chartValues=[];dataCount=0;$("latestData").textContent="データ待機中";$("chartHint").textContent="グラフをクリアしました。";drawChart();updateMetrics();});
+  window.addEventListener("resize",drawChart);
+
+  function setRTCState(connected){
+    $("rtcState").textContent=connected?"遠隔 接続中":"遠隔未接続";$("rtcDot").className="dot "+(connected?"ok":"");
+    $("sendChat").disabled=!connected;$("sendBleRequest").disabled=!connected;
+  }
+  function newPeer(){
+    closePeer(false);
+    peer=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
+    peer.onconnectionstatechange=()=>{const state=peer?peer.connectionState:"closed";addLog("RTC","接続状態",state);setRTCState(state==="connected");};
+    peer.ondatachannel=e=>{dataChannel=e.channel;setupDataChannel();};
+    peer.oniceconnectionstatechange=()=>{if(peer&&["failed","disconnected","closed"].includes(peer.iceConnectionState))setRTCState(false);};
+  }
+  function setupDataChannel(){
+    dataChannel.onopen=()=>{setRTCState(true);addLog("RTC","データチャネル接続成功");appendChat("システム","遠隔接続が成立しました。");};
+    dataChannel.onclose=()=>{setRTCState(false);addLog("RTC","データチャネル切断");};
+    dataChannel.onerror=()=>addLog("ERROR","データチャネルエラー");
+    dataChannel.onmessage=e=>handleRemoteMessage(e.data);
+  }
+  function waitForICE(pc){
+    if(pc.iceGatheringState==="complete")return Promise.resolve();
+    return new Promise(resolve=>{
+      let done=false;const finish=()=>{if(done)return;done=true;pc.removeEventListener("icegatheringstatechange",check);clearTimeout(timer);resolve();};
+      const check=()=>{if(pc.iceGatheringState==="complete")finish();};
+      const timer=setTimeout(finish,18000);pc.addEventListener("icegatheringstatechange",check);
+    });
+  }
+  async function createOffer(){
+    try{
+      newPeer();dataChannel=peer.createDataChannel("bluelink-hub");setupDataChannel();
+      const offer=await peer.createOffer();await peer.setLocalDescription(offer);$("offerBtn").disabled=true;
+      await waitForICE(peer);$("offerBox").value=JSON.stringify(peer.localDescription);$("offerBtn").disabled=false;
+      addLog("RTC","Offerを作成しました");
+    }catch(error){$("offerBtn").disabled=false;alert("Offer作成失敗: "+error.message);addLog("ERROR","Offer作成失敗",error.message);}
+  }
+  async function acceptOffer(){
+    try{
+      const raw=JSON.parse($("incomingOffer").value);newPeer();await peer.setRemoteDescription(raw);
+      const answer=await peer.createAnswer();await peer.setLocalDescription(answer);await waitForICE(peer);
+      $("answerOut").value=JSON.stringify(peer.localDescription);addLog("RTC","Answerを作成しました");
+    }catch(error){alert("Offerを処理できません: "+error.message);addLog("ERROR","Offer処理失敗",error.message);}
+  }
+  async function applyAnswer(){
+    try{if(!peer)throw new Error("先にOfferを作成してください。");const raw=JSON.parse($("answerBox").value);await peer.setRemoteDescription(raw);addLog("RTC","Answerを適用しました");}
+    catch(error){alert("Answerを適用できません: "+error.message);addLog("ERROR","Answer適用失敗",error.message);}
+  }
+  function closePeer(record){
+    if(dataChannel){try{dataChannel.close();}catch(e){}dataChannel=null;}
+    if(peer){try{peer.close();}catch(e){}peer=null;}
+    setRTCState(false);if(record!==false)addLog("RTC","遠隔接続を切断しました");
+  }
+  function sendRemote(payload){
+    if(!dataChannel||dataChannel.readyState!=="open")throw new Error("遠隔接続が成立していません。");
+    dataChannel.send(JSON.stringify(payload));
+  }
+  function appendChat(who,message){
+    const box=$("chatBox");const el=document.createElement("div");el.className="bubble"+(who==="自分"?" me":"");
+    const text=document.createElement("div");text.textContent=message;const meta=document.createElement("small");meta.textContent=who+" · "+clock();el.append(text,meta);box.append(el);box.scrollTop=box.scrollHeight;
+  }
+  function handleRemoteMessage(raw){
+    let payload;try{payload=JSON.parse(raw);}catch(e){appendChat("相手",String(raw));return;}
+    if(payload.type==="chat"){appendChat("相手",String(payload.text||""));addLog("RTC","メッセージ受信",String(payload.text||"").slice(0,70));return;}
+    if(payload.type==="ble-write-request"){addPending(payload);return;}
+    appendChat("相手","データを受信しました: "+JSON.stringify(payload).slice(0,180));addLog("RTC","データ受信",payload.type||"unknown");
+  }
+  function addPending(payload){
+    const id=++pendingId;const wrap=$("pendingRequests");if(wrap.classList.contains("empty")){wrap.className="";wrap.textContent="";}
+    const card=document.createElement("div");card.className="pending";card.dataset.id=String(id);
+    const title=document.createElement("b");title.textContent="BLE書き込みリクエスト";
+    const info=document.createElement("div");info.className="uuid";info.textContent="Service: "+payload.serviceUUID+" / Characteristic: "+payload.characteristicUUID;
+    const body=document.createElement("p");body.textContent="データ: "+(Array.isArray(payload.bytes)?payload.bytes.length:0)+" bytes";
+    const actions=document.createElement("div");actions.className="actions";
+    actions.append(makeButton("承認して実行","btn warn",async()=>{
+      try{
+        if(!bleDevice||!bleDevice.gatt.connected)throw new Error("BLE機器が接続されていません。");
+        const ch=charMap.get(payload.serviceUUID+"|"+payload.characteristicUUID);if(!ch)throw new Error("指定された特性が見つかりません。サービスUUIDと特性UUIDを確認してください。");
+        await writeBytes(ch,payload.bytes||[]);addLog("REMOTE","承認したBLE書き込み",payload.characteristicUUID);
+        sendRemote({type:"command-result",ok:true,characteristicUUID:payload.characteristicUUID});
+        card.remove();if(!$("pendingRequests").children.length){$("pendingRequests").className="empty";$("pendingRequests").textContent="未処理のリクエストはありません。";}
+      }catch(error){alert("実行できません: "+error.message);addLog("ERROR","BLEリクエスト実行失敗",error.message);}
+    }));
+    actions.append(makeButton("拒否","btn danger",()=>{card.remove();addLog("REMOTE","BLEリクエストを拒否",payload.characteristicUUID||"");if(!$("pendingRequests").children.length){$("pendingRequests").className="empty";$("pendingRequests").textContent="未処理のリクエストはありません。";}}));
+    card.append(title,info,body,actions);wrap.append(card);appendChat("システム","BLE操作リクエストを受信しました。内容を確認して承認してください。");addLog("REMOTE","BLE操作リクエスト受信",payload.characteristicUUID||"");
+  }
+  $("offerBtn").addEventListener("click",createOffer);
+  $("acceptOffer").addEventListener("click",acceptOffer);
+  $("applyAnswer").addEventListener("click",applyAnswer);
+  $("closePeer").addEventListener("click",()=>closePeer(true));
+  $("copyOffer").addEventListener("click",()=>copyText($("offerBox").value));
+  $("copyAnswer").addEventListener("click",()=>copyText($("answerOut").value));
+  async function copyText(text){try{await navigator.clipboard.writeText(text);addLog("RTC","接続コードをコピーしました");}catch(e){alert("コピーできません。テキスト欄を手動でコピーしてください。");}}
+  $("sendChat").addEventListener("click",()=>{
+    const text=$("chatInput").value.trim();if(!text)return;
+    try{sendRemote({type:"chat",text:text});appendChat("自分",text);$("chatInput").value="";}catch(error){alert(error.message);}
+  });
+  $("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("sendChat").click();});
+  $("sendBleRequest").addEventListener("click",()=>{
+    try{
+      const serviceUUID=$("remoteServiceUUID").value.trim().toLowerCase(),characteristicUUID=$("remoteCharUUID").value.trim().toLowerCase();
+      if(!uuidValid(serviceUUID)||!uuidValid(characteristicUUID))throw new Error("サービスUUIDと特性UUIDを正しく入力してください。");
+      const bytes=bytesFromInput($("remotePayload").value,$("remoteFormat").value);
+      sendRemote({type:"ble-write-request",serviceUUID:serviceUUID,characteristicUUID:characteristicUUID,bytes:bytes});
+      addLog("REMOTE","BLE操作リクエストを送信",characteristicUUID);appendChat("自分","BLE書き込みリクエストを送信しました。");
+    }catch(error){alert(error.message);}
+  });
+
+  function download(filename,text,type){
+    const blob=new Blob([text],{type:type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);
+  }
+  $("exportJSON").addEventListener("click",()=>download("bluelink-log.json",JSON.stringify({exportedAt:new Date().toISOString(),logs:logs},null,2),"application/json"));
+  $("exportCSV").addEventListener("click",()=>{
+    const quote=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+    const rows=[["time","kind","message","details"],...logs.map(x=>[x.time,x.kind,x.message,x.details])];
+    download("bluelink-log.csv","\uFEFF"+rows.map(r=>r.map(quote).join(",")).join("\r\n"),"text/csv;charset=utf-8");
+  });
+  $("clearLogs").addEventListener("click",()=>{if(!confirm("保存された履歴をすべて削除しますか？"))return;logs=[];localStorage.removeItem("bluelink.logs");renderLogs();updateMetrics();});
+  function environment(){
+    const secure=window.isSecureContext;const bt=!!(navigator.bluetooth&&navigator.bluetooth.requestDevice);const rtc=!!window.RTCPeerConnection;
+    $("browserState").textContent=bt?"BLE対応候補": "BLE非対応";
+    $("compatibility").textContent="";
+    [["HTTPS/セキュアコンテキスト",secure],["Web Bluetooth API",bt],["WebRTC",rtc],["iPhone/iPad Safariでの直接BLE接続",false]].forEach(item=>{
+      const row=document.createElement("div");row.className="device";
+      const name=document.createElement("b");name.textContent=item[0];
+      const state=document.createElement("span");state.className="tag";state.textContent=item[1]?"利用可能":"非対応または未確認";state.style.color=item[1]?"#9dffdb":"#ffc0c9";
+      row.append(name,state);$("compatibility").append(row);
+    });
+    if(!secure)$("compatibility").append(document.createTextNode(" GitHub PagesのHTTPS URLで開いてください。"));
+  }
+  renderLogs();updateMetrics();updateHomeDevice();environment();drawChart();setRTCState(false);
+  if("serviceWorker" in navigator&&window.isSecureContext){navigator.serviceWorker.register("./sw.js").catch(e=>addLog("PWA","Service Worker登録失敗",e.message));}
+  addLog("APP","BlueLink Hubを起動しました");
+})();
+</script>
+</body>
+</html>
