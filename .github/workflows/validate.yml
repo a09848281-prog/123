@@ -1,0 +1,52 @@
+name: Validate BlueLink Hub
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Extract inline JavaScript
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class ScriptParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.inside = False
+                  self.parts = []
+
+              def handle_starttag(self, tag, attrs):
+                  if tag.lower() == "script" and not dict(attrs).get("src"):
+                      self.inside = True
+
+              def handle_endtag(self, tag):
+                  if tag.lower() == "script":
+                      self.inside = False
+
+              def handle_data(self, data):
+                  if self.inside:
+                      self.parts.append(data)
+
+          parser = ScriptParser()
+          parser.feed(Path("index.html").read_text(encoding="utf-8"))
+          Path("/tmp/bluelink-inline.js").write_text("\n".join(parser.parts), encoding="utf-8")
+          if not parser.parts:
+              raise SystemExit("No inline JavaScript found")
+          PY
+      - name: Check JavaScript syntax
+        run: node --check /tmp/bluelink-inline.js
+      - name: Validate web manifest
+        run: python3 -m json.tool manifest.webmanifest > /dev/null
