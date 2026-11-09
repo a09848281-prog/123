@@ -311,6 +311,7 @@
     const data=new Uint8Array(bytes);
     if(ch.properties.write&&typeof ch.writeValueWithResponse==="function")await ch.writeValueWithResponse(data);
     else if(ch.properties.writeWithoutResponse&&typeof ch.writeValueWithoutResponse==="function")await ch.writeValueWithoutResponse(data);
+    else if(ch.properties.write&&typeof ch.writeValue==="function")await ch.writeValue(data);
     else throw new Error("この特性は書き込みに対応していません。");
   }
   $("scanBtn").addEventListener("click",connectBluetooth);
