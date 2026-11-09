@@ -268,6 +268,7 @@
   function makeButton(label,cls,handler){const b=document.createElement("button");b.type="button";b.className=cls;b.textContent=label;b.addEventListener("click",handler);return b;}
   function addWriteOption(serviceUUID,ch){
     const value=serviceUUID+"|"+ch.uuid;const option=document.createElement("option");option.value=value;option.textContent=characteristicName(ch.uuid)+" · "+ch.uuid.slice(0,13);$("writeTarget").append(option);
+    if($("writeTarget").options.length===2){$("writeTarget").value=value;activeWriteChar=ch;$("writeBtn").disabled=false;}
   }
   function selectWriteTarget(serviceUUID,ch){
     $("writeTarget").value=serviceUUID+"|"+ch.uuid;activeWriteChar=ch;$("writeBtn").disabled=false;showView("analysis");addLog("BLE","書き込み先を選択",ch.uuid);
@@ -311,7 +312,7 @@
     const data=new Uint8Array(bytes);
     if(ch.properties.write&&typeof ch.writeValueWithResponse==="function")await ch.writeValueWithResponse(data);
     else if(ch.properties.writeWithoutResponse&&typeof ch.writeValueWithoutResponse==="function")await ch.writeValueWithoutResponse(data);
-    else if(ch.properties.write&&typeof ch.writeValue==="function")await ch.writeValue(data);
+    else if((ch.properties.write||ch.properties.writeWithoutResponse)&&typeof ch.writeValue==="function")await ch.writeValue(data);
     else throw new Error("この特性は書き込みに対応していません。");
   }
   $("scanBtn").addEventListener("click",connectBluetooth);
