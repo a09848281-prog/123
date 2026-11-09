@@ -185,6 +185,7 @@
       return s.toLowerCase();
     });
   }
+  function normalizeUUID(u){return /^[0-9a-f]{4}$/.test(u)?"0000"+u+"-0000-1000-8000-00805f9b34fb":u;}
   function uuidValid(u){return /^[0-9a-f]{4}$/.test(u)||/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(u);}
   async function connectBluetooth(){
     if(!window.isSecureContext){setMessage("Bluetooth接続にはHTTPSなどのセキュアコンテキストが必要です。GitHub PagesのHTTPSで開いてください。","notice");return;}
@@ -432,7 +433,7 @@
   $("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("sendChat").click();});
   $("sendBleRequest").addEventListener("click",()=>{
     try{
-      const serviceUUID=$("remoteServiceUUID").value.trim().toLowerCase(),characteristicUUID=$("remoteCharUUID").value.trim().toLowerCase();
+      const serviceUUID=normalizeUUID($("remoteServiceUUID").value.trim().toLowerCase()),characteristicUUID=normalizeUUID($("remoteCharUUID").value.trim().toLowerCase());
       if(!uuidValid(serviceUUID)||!uuidValid(characteristicUUID))throw new Error("サービスUUIDと特性UUIDを正しく入力してください。");
       const bytes=bytesFromInput($("remotePayload").value,$("remoteFormat").value);
       sendRemote({type:"ble-write-request",serviceUUID:serviceUUID,characteristicUUID:characteristicUUID,bytes:bytes});
